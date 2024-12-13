@@ -16,6 +16,7 @@ datasource db {
 model User {
   id       Int      @id @default(autoincrement()) // Auto-incrementing primary key
   email    String   @unique                      // Unique email address
+  username String   @unique
   password String                               // Password
   createdAt DateTime @default(now())            // Timestamp of creation
   updatedAt DateTime @updatedAt                 // Timestamp of last update
