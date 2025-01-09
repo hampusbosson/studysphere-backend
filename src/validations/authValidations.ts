@@ -10,10 +10,12 @@ const signupValidation: ValidationChain[] = [
     .isEmail()
     .withMessage('Valid email is required')
     .custom(async (email: string) => {
+       console.log('Checking email:', email); // Add this line for debugging
       const existingEmail = await prisma.user.findUnique({
         where: { email },
       });
       if (existingEmail) {
+        console.log('email is already taken')
         throw new Error('Email is already taken.');
       }
       return true;

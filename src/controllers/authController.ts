@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { validationResult } from "express-validator";
 import passport from "../config/passportConfig";
@@ -16,6 +16,7 @@ const createUser = async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
 
   const errors = validationResult(req);
+  console.log(errors);
   if (!errors.isEmpty()) {
     res.status(400).json({ errors: errors.array() });
     return;
@@ -156,76 +157,95 @@ const resendOTP = async (req: Request, res: Response) => {
 };
 
 const loginUser = (req: Request, res: Response, next: NextFunction): void => {
+  console.log("Received login request body:", req.body); // Add this
+
   passport.authenticate(
     "local",
     { session: false },
-    (err: Error, user: any, info: any) => {
+    (err: Error, user: User | false, info: { message: string }) => {
       if (err) {
         console.error("Authentication error:", err);
         return res.status(500).json({ message: "Internal server error" });
       }
 
+      // Handle invalid credentials
       if (!user) {
         return res.status(400).json({
-          message: info ? info.message : "Invalid username or password",
+          message: info ? info.message : "Invalid email or password",
         });
       }
 
-      req.login(user, { session: false }, (err) => {
-        if (err) {
-          console.error("Login error:", err);
-          return res.status(500).json({ message: "Login failed" });
-        }
-
-        // Generate JWT token
-        const token = jwt.sign(
-          { id: user.id, username: user.username }, // JWT payload
-          process.env.JWT_SECRET as string, // Secret key from environment variables
-          { expiresIn: "1h" }, // Token expiration
-        );
-
-        // Return the token and basic user info
-        return res.status(200).json({
-          token,
-          user: { id: user.id, username: user.username, email: user.email },
+      // Check if the user is verified
+      if (!user.isVerified) {
+        return res.status(403).json({
+          message: "Please verify your email before logging in.",
         });
+      }
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { id: user.id, email: user.email }, // JWT payload
+        process.env.JWT_SECRET as string, // Secret key
+        { expiresIn: "1h" }, // Token expiration
+      );
+
+      // Set the token as an HTTP-only cookie
+      res.cookie("authToken", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // Send over HTTPS only in production
+        sameSite: "strict", // CSRF protection
+        maxAge: 3600000, // 1 hour
       });
+
+      res.status(200).json({ message: "Login successful!" });
+      console.log('login successful!')
     },
-  )(req, res, next);
+  )(req, res, next); 
 };
 
-const getUserFromToken = async (req: Request, res: Response) => {
-  const token = req.headers.authorization?.split(" ")[1];
-
-  if (!token) {
-    res.status(401).json({ error: "Token not provided" });
-    return;
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-
-    if (!decoded || !decoded.id) {
-      res.status(402).json({ error: "invalid token" });
+const authenticateToken = (req: Request, res: Response, next: NextFunction): void => {
+    const token = req.cookies.authToken; // Extract the token from cookies
+  
+    if (!token) {
+      res.status(401).json({ error: "Unauthorized: No token provided" });
       return;
     }
-
-    const user = await prisma.user.findUnique({
-      where: { id: parseInt(decoded.id) },
-    });
-
-    if (!user) {
-      res.status(404).json({ error: "User not found" });
-      return;
+  
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
+      req.user = decoded; // Attach user information to the request object
+      next();
+    } catch (err) {
+      res.status(403).json({ error: "Unauthorized: Invalid token" });
     }
-
-    res.status(200).json({ user });
-    return;
-  } catch (err) {
-    console.error("Error verifying token:", err);
-    res.status(500).json({ error: "Failed to verify token" });
-  }
 };
+
+const getUserFromSession = async(req: Request, res: Response) => {
+    try {
+        const userId = (req.user as { id: string }).id;
+
+        const user = await prisma.user.findUnique({
+          where: { id: parseInt(userId) }, // Assumes `id` is numeric
+        });
+    
+        if (!user) {
+          res.status(404).json({ error: "User not found" });
+          return;
+        }
+    
+        res.status(200).json({
+          success: true,
+          data: {
+            id: user.id,
+            email: user.email,
+            isVerified: user.isVerified, 
+          },
+        });
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+}
 
 // Export the functions for use in routes
-export { createUser, verifyEmail, resendOTP, loginUser, getUserFromToken };
+export { createUser, verifyEmail, resendOTP, loginUser, authenticateToken, getUserFromSession };
