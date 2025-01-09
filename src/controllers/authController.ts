@@ -203,6 +203,22 @@ const loginUser = (req: Request, res: Response, next: NextFunction): void => {
   )(req, res, next); 
 };
 
+const logoutUser = (req: Request, res: Response): void => {
+  try {
+    // clear the auth token cookie
+    res.clearCookie("authToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.status(200).json({ message: "Logout succesfull" });
+  } catch(error) {
+    console.error("Error during logout:", error);
+    res.status(500).json({ message: "Internal server error during logout "});
+  }
+}
+
 const authenticateToken = (req: Request, res: Response, next: NextFunction): void => {
     const token = req.cookies.authToken; // Extract the token from cookies
   
@@ -248,4 +264,4 @@ const getUserFromSession = async(req: Request, res: Response) => {
 }
 
 // Export the functions for use in routes
-export { createUser, verifyEmail, resendOTP, loginUser, authenticateToken, getUserFromSession };
+export { createUser, verifyEmail, resendOTP, loginUser, authenticateToken, getUserFromSession, logoutUser };
