@@ -19,7 +19,9 @@ model User {
   isVerified             Boolean   @default(false)
   verificationOtp        String?
   verificationOtpExpires DateTime?
-  password               String // Password
+  password               String     // Password
+  resetToken             String?    // Token for password reset
+  resetTokenExpires      DateTime?  // Expiration time for reset token
   createdAt              DateTime  @default(now()) // Timestamp of creation
   updatedAt              DateTime  @updatedAt // Timestamp of last update
 }
