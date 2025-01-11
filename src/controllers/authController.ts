@@ -57,6 +57,82 @@ const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+const generateResetToken = (userId: number): string => {
+  const payload = { id: userId };
+  const options = { expiresIn: '15m' };
+
+  return jwt.sign(payload, JWT_SECRET, options); 
+};
+
+const sendResetPasswordLink = async (req: Request, res: Response): Promise<void> => {
+  const { email } = req.body;
+
+   try {
+      const user = await prisma.user.findUnique({ where: { email }});
+
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+
+      const resetToken = generateResetToken(user.id);
+      const resetTokenExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+      // Save the token and expiry in the database
+      await prisma.user.update({
+        where: {id: user.id},
+        data: {
+          resetToken,
+          resetTokenExpires
+        },
+      });
+
+      const resetLink = `http://localhost:5173/reset-password?token=${resetToken}`;
+      await sendEmail(
+        email,
+        "Reset Your password",
+        `You requested a password reset. Use this link to reset your password: ${resetLink}. This link will expire in 15 minutes.`
+      );
+
+      res.status(200).json({ message: "Password reset link sent to your email." });
+   } catch (error) {
+    console.error("Error reseting password:", error);
+    res.status(500).json({ message: "Internal server error." });
+   }
+}
+
+const resetPassword = async (req: Request, res: Response): Promise<void> => {
+  const { token, newPassword } = req.body;
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: number };
+    const userId = decoded.id;
+
+    const user = await prisma.user.findUnique({where: {id: userId}});
+
+    if (!user || user.resetToken !== token || !user.resetTokenExpires || user.resetTokenExpires < new Date()) {
+      res.status(400).json({ message: "Invalid or expired reset token." });
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10); 
+
+    await prisma.user.update({
+      where: { id: userId }, 
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpires: null, 
+      },
+    });
+
+    res.status(200).json({ message: "Password reset sucessful" });
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+}
+
 const sendEmail = async (to: string, subject: string, text: string) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -264,4 +340,4 @@ const getUserFromSession = async(req: Request, res: Response) => {
 }
 
 // Export the functions for use in routes
-export { createUser, verifyEmail, resendOTP, loginUser, authenticateToken, getUserFromSession, logoutUser };
+export { createUser, verifyEmail, resendOTP, loginUser, authenticateToken, getUserFromSession, logoutUser, sendResetPasswordLink };
