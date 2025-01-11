@@ -273,7 +273,7 @@ const loginUser = (req: Request, res: Response, next: NextFunction): void => {
         maxAge: 3600000, // 1 hour
       });
 
-      res.status(200).json({ message: "Login successful!" });
+      res.status(200).json({ message: "Login successful!", token: token });
       console.log('login successful!')
     },
   )(req, res, next); 
@@ -340,4 +340,4 @@ const getUserFromSession = async(req: Request, res: Response) => {
 }
 
 // Export the functions for use in routes
-export { createUser, verifyEmail, resendOTP, loginUser, authenticateToken, getUserFromSession, logoutUser, sendResetPasswordLink };
+export { createUser, verifyEmail, resendOTP, loginUser, authenticateToken, getUserFromSession, logoutUser, sendResetPasswordLink, resetPassword };
