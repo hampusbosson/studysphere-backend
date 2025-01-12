@@ -33,4 +33,23 @@ const createClass = async (req: Request, res: Response) => {
     }
 }
 
+const getClassesForUser = async (req: Request, res: Response) => {
+    const { userId } = req.user?.id; 
+
+    try {
+        
+        const userClasses = await prisma.class.findMany({
+            where: {
+                userId
+            }
+        });
+
+        res.status(200).json({ message: "Classes recieved successfully", userClasses})
+    } catch (error) {
+        console.error("Error recieving classes:", error);
+        res.status(500).json({ message: "Internal server error" });
+        return;
+    }
+}
+
 export { createClass }

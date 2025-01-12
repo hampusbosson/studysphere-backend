@@ -295,23 +295,6 @@ const logoutUser = (req: Request, res: Response): void => {
   }
 }
 
-const authenticateToken = (req: Request, res: Response, next: NextFunction): void => {
-    const token = req.cookies.authToken; // Extract the token from cookies
-  
-    if (!token) {
-      res.status(401).json({ error: "Unauthorized: No token provided" });
-      return;
-    }
-  
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
-      req.user = decoded; // Attach user information to the request object
-      next();
-    } catch (err) {
-      res.status(403).json({ error: "Unauthorized: Invalid token" });
-    }
-};
-
 const getUserFromSession = async(req: Request, res: Response) => {
     try {
         const userId = (req.user as { id: string }).id;
@@ -340,4 +323,4 @@ const getUserFromSession = async(req: Request, res: Response) => {
 }
 
 // Export the functions for use in routes
-export { createUser, verifyEmail, resendOTP, loginUser, authenticateToken, getUserFromSession, logoutUser, sendResetPasswordLink, resetPassword };
+export { createUser, verifyEmail, resendOTP, loginUser, getUserFromSession, logoutUser, sendResetPasswordLink, resetPassword };

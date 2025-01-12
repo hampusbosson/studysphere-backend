@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
-import { createUser, verifyEmail, resendOTP, loginUser, authenticateToken, getUserFromSession, logoutUser, sendResetPasswordLink, resetPassword } from '../controllers/authController';
-import { signupValidation } from '../validations/authValidations';
+import { createUser, verifyEmail, resendOTP, loginUser, getUserFromSession, logoutUser, sendResetPasswordLink, resetPassword } from '../controllers/authController';
+import { signupValidation } from '../middleware/validationMiddleware';
+import { authenticateToken } from '../middleware/authMiddleware';
 
 const router = express.Router();
 
