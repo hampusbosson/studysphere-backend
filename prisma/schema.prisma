@@ -19,9 +19,27 @@ model User {
   isVerified             Boolean   @default(false)
   verificationOtp        String?
   verificationOtpExpires DateTime?
-  password               String     // Password
-  resetToken             String?    // Token for password reset
-  resetTokenExpires      DateTime?  // Expiration time for reset token
+  password               String // Password
+  resetToken             String? // Token for password reset
+  resetTokenExpires      DateTime? // Expiration time for reset token
   createdAt              DateTime  @default(now()) // Timestamp of creation
   updatedAt              DateTime  @updatedAt // Timestamp of last update
+
+  classes Class[] @relation("UserClasses")
+}
+
+model Class {
+  id     Int      @id @default(autoincrement())
+  name   String   @unique
+  notes  Note[]   @relation("ClassNotes") // Relation to Note model
+  userId Int      // Foreign key to User
+  user   User     @relation("UserClasses", fields: [userId], references: [id])
+}
+
+model Note {
+  id      Int    @id @default(autoincrement())
+  title   String
+  content String
+  classId Int   //Foreign key to Class
+  class   Class @relation("ClassNotes", fields: [classId], references: [id])
 }
