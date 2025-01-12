@@ -1,7 +1,8 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import authRoutes from './routes/authRoutes'
-import cookieParser from 'cookie-parser'
+import authRoutes from './routes/authRoutes';
+import classRoutes from './routes/classRoutes';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -16,6 +17,8 @@ app.use(cors({
 app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/class', classRoutes)
+
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello, TypeScript with Express!'); 
