@@ -1,8 +1,10 @@
 import express from "express";
-import { createClass } from "../controllers/classController";
+import { createClass, getClassesForUser } from "../controllers/classController";
+import { authenticateToken } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
-router.post('/create', createClass);
+router.post('/create', authenticateToken, createClass);
+router.get('/classes', authenticateToken, getClassesForUser);
 
 export default router;

@@ -10,12 +10,13 @@ const authenticateToken = (req: Request, res: Response, next: NextFunction): voi
     }
   
     try {
+      // Decode the JWT and attach `user` with the `id` property
       const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
-      req.user = decoded; // Attach user information to the request object
+      req.user = { id: decoded.id }; // Ensure req.user has `id`
       next();
     } catch (err) {
       res.status(403).json({ error: "Unauthorized: Invalid token" });
     }
-};
+  };
 
 export { authenticateToken };

@@ -298,7 +298,6 @@ const logoutUser = (req: Request, res: Response): void => {
 const getUserFromSession = async(req: Request, res: Response) => {
     try {
         const userId = (req.user as { id: string }).id;
-
         const user = await prisma.user.findUnique({
           where: { id: parseInt(userId) }, // Assumes `id` is numeric
         });
