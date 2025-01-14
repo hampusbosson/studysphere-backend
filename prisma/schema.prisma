@@ -29,11 +29,13 @@ model User {
 }
 
 model Class {
-  id     Int      @id @default(autoincrement())
-  name   String   @unique
-  notes  Note[]   @relation("ClassNotes") // Relation to Note model
-  userId Int      // Foreign key to User
-  user   User     @relation("UserClasses", fields: [userId], references: [id])
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  notes      Note[]   @relation("ClassNotes") // Relation to Note model
+  userId     Int      // Foreign key to User
+  createdAt  DateTime @default(now()) // Timestamp of creation
+  updatedAt  DateTime @updatedAt @default(now()) // Timestamp of last update
+  user       User     @relation("UserClasses", fields: [userId], references: [id])
 }
 
 model Note {
