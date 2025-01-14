@@ -47,9 +47,8 @@ const getClassesForUser = async (req: Request, res: Response) => {
     const userId = (req.user as { id: string }).id;
 
     const userClasses = await prisma.class.findMany({
-      where: {
-        userId: parseInt(userId),
-      },
+      where: { userId: parseInt(userId) },
+      orderBy: { createdAt: 'asc' }, // Sort classes by creation time
     });
 
     res.status(200).json({ message: "Classes received successfully", userClasses });
@@ -59,4 +58,32 @@ const getClassesForUser = async (req: Request, res: Response) => {
   }
 };
 
-export { createClass, getClassesForUser }
+const renameClass = async (req: Request, res: Response) => {
+  try {
+    if (!req.user || typeof req.user !== "object" || !("id" in req.user)) {
+      res.status(401).json({ message: "Unauthorized: User ID not found" });
+      return;
+    }
+
+    const userId = (req.user as { id: string }).id;
+
+    const { classId, newName } = req.body;
+
+    const updatedClass = await prisma.class.update({
+      where: {
+        id: classId,
+        userId: parseInt(userId),
+      },
+      data: {
+        name: newName.trim(),
+      }
+    });    
+  
+      res.status(200).json({ message: "Class renamed successfully", updatedClass });
+  } catch (error) {
+    console.error("Error renaming classes:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export { createClass, getClassesForUser, renameClass }
