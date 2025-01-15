@@ -86,4 +86,41 @@ const renameClass = async (req: Request, res: Response) => {
   }
 }
 
-export { createClass, getClassesForUser, renameClass }
+const deleteClass = async (req: Request, res: Response) => {
+  try {
+    if (!req.user || typeof req.user !== "object" || !("id" in req.user)) {
+      res.status(401).json({ message: "Unauthorized: User ID not found" });
+      return;
+    }
+
+    const userId = (req.user as { id: string }).id;
+
+    const { classId } = req.body;
+
+    // Ensure the class belongs to the user before deletion
+    const classToDelete = await prisma.class.findFirst({
+      where: {
+        id: classId,
+        userId: parseInt(userId), // Ensure the class belongs to the user
+      },
+    });
+
+    if (!classToDelete) {
+      res.status(404).json({ message: "Class not found or not authorized" });
+      return;
+    }
+
+    const deletedClass = await prisma.class.delete({
+      where: {
+        id: classId,
+      }
+    })
+
+    res.status(200).json({ message: "Class removed succesfully", deletedClass }); 
+  } catch (error) {
+    console.error("Error deleting class:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export { createClass, getClassesForUser, renameClass, deleteClass }
