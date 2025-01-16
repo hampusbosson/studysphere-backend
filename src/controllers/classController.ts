@@ -49,6 +49,7 @@ const getClassesForUser = async (req: Request, res: Response) => {
     const userClasses = await prisma.class.findMany({
       where: { userId: parseInt(userId) },
       orderBy: { createdAt: 'asc' }, // Sort classes by creation time
+      include: { lectures: true },
     });
 
     res.status(200).json({ message: "Classes received successfully", userClasses });
