@@ -42,8 +42,8 @@ model Lecture {
   id        Int      @id @default(autoincrement())
   title     String
   content   String
-  lectureId Int //Foreign key to Class
+  classId   Int //Foreign key to Class
   createdAt DateTime @default(now()) // Timestamp of creation
   updatedAt DateTime @default(now()) @updatedAt // Timestamp of last update
-  class     Class    @relation("ClassLectures", fields: [lectureId], references: [id])
+  class     Class    @relation("ClassLectures", fields: [classId], references: [id])
 }
