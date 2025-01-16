@@ -19,7 +19,7 @@ app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/class', classRoutes);
-app.use('api/lecture', lectureRoutes);
+app.use('/api/lecture', lectureRoutes);
 
 
 app.get('/', (req: Request, res: Response) => {
