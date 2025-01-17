@@ -34,4 +34,28 @@ const createLecture = async (req: Request, res: Response) => {
   }
 };
 
-export { createLecture };
+const getLecturesForClass = async (req: Request, res: Response) => {
+    try {
+        const { classId } = req.params;
+
+            // Validate input
+        if (!classId) {
+            res
+            .status(400)
+            .json({ message: "classId is required." });
+            return;
+        }
+
+        const lectures = await prisma.lecture.findMany({
+            where: { classId: (parseInt(classId)) }, 
+            orderBy: { createdAt: "asc" }
+        });
+
+        res.status(200).json({message: "lectures recieved succesfully", lectures})
+    } catch (error) {
+        console.error("Error fetching lectures:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export { createLecture, getLecturesForClass };
