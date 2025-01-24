@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { PrismaClient } from "@prisma/client";
+import { fetchContentFromURL, summarizeContent } from "../services/contentService";
 
 const prisma = new PrismaClient();
 
 const createLecture = async (req: Request, res: Response) => {
   try {
-    const { classId, lectureTitle } = req.body;
+    const { classId, lectureTitle, url } = req.body;
 
     // Validate input
     if (!classId || !lectureTitle) {
@@ -15,10 +16,16 @@ const createLecture = async (req: Request, res: Response) => {
       return;
     }
 
+    let content = "";
+    if (url) {
+      content = await fetchContentFromURL(url);
+      content = await summarizeContent(content)
+    }
+
     const newLecture = await prisma.lecture.create({
       data: {
         title: lectureTitle,
-        content: "",
+        content,
         class: {
           connect: { id: parseInt(classId) },
         },
