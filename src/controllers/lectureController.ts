@@ -23,7 +23,9 @@ const createLecture = async (req: Request, res: Response) => {
     if (url) {
       console.log("url has been entered", url);
       content = await fetchContentFromURL(url);
+      console.log("Fetching of content complete!")
       content = await summarizeContent(content);
+      console.log("Summarization of content complete!");
     }
 
     const newLecture = await prisma.lecture.create({
