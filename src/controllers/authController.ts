@@ -59,47 +59,52 @@ const generateOTP = () => {
 
 const generateResetToken = (userId: number): string => {
   const payload = { id: userId };
-  const options = { expiresIn: '15m' };
+  const options = { expiresIn: "15m" };
 
-  return jwt.sign(payload, JWT_SECRET, options); 
+  return jwt.sign(payload, JWT_SECRET, options);
 };
 
-const sendResetPasswordLink = async (req: Request, res: Response): Promise<void> => {
+const sendResetPasswordLink = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { email } = req.body;
 
-   try {
-      const user = await prisma.user.findUnique({ where: { email }});
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
 
-      if (!user) {
-        res.status(404).json({ message: "User not found" });
-        return;
-      }
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
 
-      const resetToken = generateResetToken(user.id);
-      const resetTokenExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const resetToken = generateResetToken(user.id);
+    const resetTokenExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-      // Save the token and expiry in the database
-      await prisma.user.update({
-        where: {id: user.id},
-        data: {
-          resetToken,
-          resetTokenExpires
-        },
-      });
+    // Save the token and expiry in the database
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetToken,
+        resetTokenExpires,
+      },
+    });
 
-      const resetLink = `http://localhost:5173/reset-password?token=${resetToken}`;
-      await sendEmail(
-        email,
-        "Reset Your password",
-        `You requested a password reset. Use this link to reset your password: ${resetLink}. This link will expire in 15 minutes.`
-      );
+    const resetLink = `http://localhost:5173/reset-password?token=${resetToken}`;
+    await sendEmail(
+      email,
+      "Reset Your password",
+      `You requested a password reset. Use this link to reset your password: ${resetLink}. This link will expire in 15 minutes.`,
+    );
 
-      res.status(200).json({ message: "Password reset link sent to your email." });
-   } catch (error) {
+    res
+      .status(200)
+      .json({ message: "Password reset link sent to your email." });
+  } catch (error) {
     console.error("Error reseting password:", error);
     res.status(500).json({ message: "Internal server error." });
-   }
-}
+  }
+};
 
 const resetPassword = async (req: Request, res: Response): Promise<void> => {
   const { token, newPassword } = req.body;
@@ -108,21 +113,26 @@ const resetPassword = async (req: Request, res: Response): Promise<void> => {
     const decoded = jwt.verify(token, JWT_SECRET) as { id: number };
     const userId = decoded.id;
 
-    const user = await prisma.user.findUnique({where: {id: userId}});
+    const user = await prisma.user.findUnique({ where: { id: userId } });
 
-    if (!user || user.resetToken !== token || !user.resetTokenExpires || user.resetTokenExpires < new Date()) {
+    if (
+      !user ||
+      user.resetToken !== token ||
+      !user.resetTokenExpires ||
+      user.resetTokenExpires < new Date()
+    ) {
       res.status(400).json({ message: "Invalid or expired reset token." });
       return;
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10); 
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     await prisma.user.update({
-      where: { id: userId }, 
+      where: { id: userId },
       data: {
         password: hashedPassword,
         resetToken: null,
-        resetTokenExpires: null, 
+        resetTokenExpires: null,
       },
     });
 
@@ -131,7 +141,7 @@ const resetPassword = async (req: Request, res: Response): Promise<void> => {
     console.error("Error resetting password:", error);
     res.status(500).json({ message: "Internal server error." });
   }
-}
+};
 
 const sendEmail = async (to: string, subject: string, text: string) => {
   const transporter = nodemailer.createTransport({
@@ -274,9 +284,9 @@ const loginUser = (req: Request, res: Response, next: NextFunction): void => {
       });
 
       res.status(200).json({ message: "Login successful!", token: token });
-      console.log('login successful!')
+      console.log("login successful!");
     },
-  )(req, res, next); 
+  )(req, res, next);
 };
 
 const logoutUser = (req: Request, res: Response): void => {
@@ -289,37 +299,46 @@ const logoutUser = (req: Request, res: Response): void => {
     });
 
     res.status(200).json({ message: "Logout succesfull" });
-  } catch(error) {
+  } catch (error) {
     console.error("Error during logout:", error);
-    res.status(500).json({ message: "Internal server error during logout "});
+    res.status(500).json({ message: "Internal server error during logout " });
   }
-}
+};
 
-const getUserFromSession = async(req: Request, res: Response) => {
-    try {
-        const userId = (req.user as { id: string }).id;
-        const user = await prisma.user.findUnique({
-          where: { id: parseInt(userId) }, // Assumes `id` is numeric
-        });
-    
-        if (!user) {
-          res.status(404).json({ error: "User not found" });
-          return;
-        }
-    
-        res.status(200).json({
-          success: true,
-          data: {
-            id: user.id,
-            email: user.email,
-            isVerified: user.isVerified, 
-          },
-        });
-      } catch (error) {
-        console.error("Error fetching user:", error);
-        res.status(500).json({ error: "Internal server error" });
-      }
-}
+const getUserFromSession = async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as { id: string }).id;
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) }, // Assumes `id` is numeric
+    });
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        isVerified: user.isVerified,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 // Export the functions for use in routes
-export { createUser, verifyEmail, resendOTP, loginUser, getUserFromSession, logoutUser, sendResetPasswordLink, resetPassword };
+export {
+  createUser,
+  verifyEmail,
+  resendOTP,
+  loginUser,
+  getUserFromSession,
+  logoutUser,
+  sendResetPasswordLink,
+  resetPassword,
+};
