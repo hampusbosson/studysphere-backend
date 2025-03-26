@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const createClass = async (req: Request, res: Response) => {
+const createCourse = async (req: Request, res: Response) => {
   try {
     if (!req.user || typeof req.user !== "object" || !("id" in req.user)) {
       res.status(401).json({ message: "Unauthorized: User ID not found" });
@@ -11,25 +11,25 @@ const createClass = async (req: Request, res: Response) => {
     }
 
     const userId = (req.user as { id: string }).id; // Extract userId from req.user
-    const { className } = req.body; // Get className from the request body
+    const { courseName } = req.body; // Get className from the request body
 
     const newClass = await prisma.class.create({
       data: {
-        name: className,
+        name: courseName,
         user: {
           connect: { id: parseInt(userId) }, // Use userId from req.user
         },
       },
     });
 
-    res.status(201).json({ message: "Class created successfully", newClass });
+    res.status(201).json({ message: "Course created successfully", newClass });
   } catch (error: any) {
-    console.error("Error creating class:", error);
+    console.error("Error creating course:", error);
 
     if (error.code === "P2002") {
       res
         .status(400)
-        .json({ message: "Class name must be unique. This name already exists." });
+        .json({ message: "Course name must be unique. This name already exists." });
       return;
     }
 
@@ -37,7 +37,7 @@ const createClass = async (req: Request, res: Response) => {
   }
 };
 
-const getClassesForUser = async (req: Request, res: Response) => {
+const getCoursesForUser = async (req: Request, res: Response) => {
   try {
     if (!req.user || typeof req.user !== "object" || !("id" in req.user)) {
       res.status(401).json({ message: "Unauthorized: User ID not found" });
@@ -46,20 +46,20 @@ const getClassesForUser = async (req: Request, res: Response) => {
 
     const userId = (req.user as { id: string }).id;
 
-    const userClasses = await prisma.class.findMany({
+    const userCourses = await prisma.class.findMany({
       where: { userId: parseInt(userId) },
       orderBy: { createdAt: 'asc' }, // Sort classes by creation time
       include: { lectures: true },
     });
 
-    res.status(200).json({ message: "Classes received successfully", userClasses });
+    res.status(200).json({ message: "Classes received successfully", userCourses });
   } catch (error) {
     console.error("Error receiving classes:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
-const renameClass = async (req: Request, res: Response) => {
+const renameCourse = async (req: Request, res: Response) => {
   try {
     if (!req.user || typeof req.user !== "object" || !("id" in req.user)) {
       res.status(401).json({ message: "Unauthorized: User ID not found" });
@@ -68,11 +68,11 @@ const renameClass = async (req: Request, res: Response) => {
 
     const userId = (req.user as { id: string }).id;
 
-    const { classId, newName } = req.body;
+    const { courseId, newName } = req.body;
 
     const updatedClass = await prisma.class.update({
       where: {
-        id: classId,
+        id: courseId,
         userId: parseInt(userId),
       },
       data: {
@@ -80,14 +80,14 @@ const renameClass = async (req: Request, res: Response) => {
       }
     });    
   
-      res.status(200).json({ message: "Class renamed successfully", updatedClass });
+      res.status(200).json({ message: "Course renamed successfully", updatedClass });
   } catch (error) {
-    console.error("Error renaming classes:", error);
+    console.error("Error renaming courses:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
 
-const deleteClass = async (req: Request, res: Response) => {
+const deleteCourse = async (req: Request, res: Response) => {
   try {
     if (!req.user || typeof req.user !== "object" || !("id" in req.user)) {
       res.status(401).json({ message: "Unauthorized: User ID not found" });
@@ -96,32 +96,32 @@ const deleteClass = async (req: Request, res: Response) => {
 
     const userId = (req.user as { id: string }).id;
 
-    const { classId } = req.body;
+    const { courseId } = req.body;
 
     // Ensure the class belongs to the user before deletion
-    const classToDelete = await prisma.class.findFirst({
+    const courseToDelete = await prisma.class.findFirst({
       where: {
-        id: classId,
+        id: courseId,
         userId: parseInt(userId), // Ensure the class belongs to the user
       },
     });
 
-    if (!classToDelete) {
-      res.status(404).json({ message: "Class not found or not authorized" });
+    if (!courseToDelete) {
+      res.status(404).json({ message: "Course not found or not authorized" });
       return;
     }
 
-    const deletedClass = await prisma.class.delete({
+    const deletedCourse = await prisma.class.delete({
       where: {
-        id: classId,
+        id: courseId,
       }
     })
 
-    res.status(200).json({ message: "Class removed succesfully", deletedClass }); 
+    res.status(200).json({ message: "Course removed succesfully", deletedCourse }); 
   } catch (error) {
-    console.error("Error deleting class:", error);
+    console.error("Error deleting course:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
 
-export { createClass, getClassesForUser, renameClass, deleteClass }
+export { createCourse, getCoursesForUser, renameCourse, deleteCourse }

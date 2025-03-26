@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import authRoutes from './routes/authRoutes';
-import classRoutes from './routes/classRoutes';
+import courseRoutes from './routes/courseRoutes';
 import lectureRoutes from './routes/lectureRoutes'
 import cookieParser from 'cookie-parser';
 
@@ -18,7 +18,7 @@ app.use(cors({
 app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
-app.use('/api/class', classRoutes);
+app.use('/api/course', courseRoutes);
 app.use('/api/lecture', lectureRoutes);
 
 
