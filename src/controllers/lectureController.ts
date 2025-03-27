@@ -4,6 +4,7 @@ import {
   fetchContentFromURL,
   summarizeContent,
 } from "../services/contentService";
+import axios from "axios";
 
 const prisma = new PrismaClient();
 
@@ -98,4 +99,28 @@ const deleteLecture = async (req: Request, res: Response) => {
   }
 };
 
-export { createLecture, getLecturesForClass, deleteLecture };
+const setPdfCorsHeader = async (req: Request, res: Response) => {
+  const pdfUrl = req.query.url as string;
+
+  if (!pdfUrl) {
+    res.status(400).json({message: 'URL paramater is required.'});
+    return;
+  }
+
+  try {
+    const response = await axios.get(pdfUrl, {responseType: 'stream'});
+
+    res.set('Access-Control-Allow-Origin', '*');
+
+    if (response.headers['content-type']) {
+      res.set('Content-Type', response.headers['content-type']);
+    }
+
+    response.data.pipe(res);
+  } catch (error) {
+    console.error('Error fetching PDF:', error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export { createLecture, getLecturesForClass, deleteLecture, setPdfCorsHeader };
