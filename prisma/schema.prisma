@@ -39,11 +39,13 @@ model Class {
 }
 
 model Lecture {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String
-  classId   Int //Foreign key to Class
-  createdAt DateTime @default(now()) // Timestamp of creation
-  updatedAt DateTime @default(now()) @updatedAt // Timestamp of last update
-  class     Class    @relation("ClassLectures", fields: [classId], references: [id], onDelete: Cascade)
+  id                Int      @id @default(autoincrement())
+  title             String
+  content           String
+  summarizedContent String? // Optional summarized content
+  url               String? // Optional URL field
+  classId           Int //Foreign key to Class
+  createdAt         DateTime @default(now()) // Timestamp of creation
+  updatedAt         DateTime @default(now()) @updatedAt // Timestamp of last update
+  class             Class    @relation("ClassLectures", fields: [classId], references: [id], onDelete: Cascade)
 }
