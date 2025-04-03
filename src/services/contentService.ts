@@ -9,16 +9,22 @@ const client = new OpenAI({
 
 export const fetchContentFromURL = async (url: string): Promise<string> => {
   try {
+    console.time("Fetch Request");
     const response = await axios.get(url, { responseType: "arraybuffer" });
+    console.timeEnd("Fetch Request");
 
     if (response.headers["content-type"] === "application/pdf") {
+      console.time("PDF Parse");
       const pdfContent = await pdfParse(response.data);
+      console.timeEnd("PDF Parse");
       return pdfContent.text.trim();
     }
 
+    console.time("HTML Parse");
     const html = response.data.toString();
     const $ = cheerio.load(html);
     const text = $("body").text();
+    console.timeEnd("HTML Parse");
     return text.trim();
   } catch (error) {
     console.error("Failed to fetch content from URL");
@@ -29,28 +35,43 @@ export const fetchContentFromURL = async (url: string): Promise<string> => {
 // Summarize content using OpenAI's GPT API
 export const summarizeContent = async (content: string): Promise<string> => {
   try {
-    // Split content into smaller chunks to avoid token limits
+    console.time("Total Summarization");
+    // Split content into smaller chunks
     const maxChunkSize = 3000; // Approx. 3000 tokens per chunk
     const contentChunks = splitContentIntoChunks(content, maxChunkSize);
 
-    let combinedSummary = "";
+    console.log(contentChunks.length);
 
+    let combinedSummary = "";
+    let chunkIndex = 1;
     for (const chunk of contentChunks) {
+      console.time(`Summarize Chunk ${chunkIndex}`);
       const response = await client.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "o3-mini-2025-01-31",
         messages: [
           {
             role: "system",
             content:
-            "You are a top-level educator specializing in ultra-efficient learning. Summarize the following text in bullet points with clear titles about the focus subject. Focus only on the absolute core ideas—ignore minor details, technical jargon, or unnecessary explanations. Do not include intros, conclusions, or formatting metadata. Only return the key takeaways in a structured, highly compressed format that maximizes clarity and efficiency. Your answer should never ever under no circumstances exceed the limit of 5000 tokens, if it does, you decide what should be cut out to fit the criteria. I want you to respond in nicely formatted HTML code, there should be no instances of comments saying 'html'. I want the main ideas to have a <strong> tag"
+              "Summarize the following content in a concise and clear manner. " +
+              "The summary should be in HTML format, with <strong> for bold text and <ul> for lists. " +
+              "The summary should start with a headline that is the name of the subject, for example: 'Artificial Intelligence', the headline should be wrapped in a <h1> and <strong> tag " +
+              "The summary should be informative and easy to understand. " +
+              "Please avoid using overly technical language or jargon. " +
+              "Please summarize it in a bullet point format. " + 
+              "Each bullet point list should start with a headline in bold, " + 
+              "If the content is too long, please summarize it in multiple parts. ",
+              
           },
           { role: "user", content: chunk },
         ],
-        max_tokens: 5000,
+        max_completion_tokens: 5000,
       });
 
-      combinedSummary += response.choices[0]?.message?.content || "";   
+      console.timeEnd(`Summarize Chunk ${chunkIndex}`);
+      combinedSummary += response.choices[0]?.message?.content || "";
+      chunkIndex++;
     }
+    console.timeEnd("Total Summarization");
 
     return combinedSummary;
   } catch (error) {
