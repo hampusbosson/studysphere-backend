@@ -24,15 +24,14 @@ const createLecture = async (req: Request, res: Response) => {
     if (url) {
       console.log("url has been entered", url);
       content = await fetchContentFromURL(url);
-      console.log("Fetching of content complete!")
-      content = await summarizeContent(content);
-      console.log("Summarization of content complete!");
+      console.log("Fetching of content complete!");
     }
 
     const newLecture = await prisma.lecture.create({
       data: {
         title: lectureTitle,
         content,
+        url,
         class: {
           connect: { id: parseInt(classId) },
         },
@@ -44,6 +43,71 @@ const createLecture = async (req: Request, res: Response) => {
       .json({ message: "Lecture created succesfully", newLecture });
   } catch (error) {
     console.error("Error creating lecture:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const summarizeLecture = async (req: Request, res: Response) => {
+  try {
+    console.log("Summarizing lecture...");
+    const { lectureId } = req.body;
+
+    // Validate input
+    if (!lectureId) {
+      res.status(400).json({ message: "LectureId is required." });
+      return;
+    }
+
+    const lecture = await prisma.lecture.findUnique({
+      where: { id: parseInt(lectureId) },
+    });
+
+    if (!lecture) {
+      res.status(404).json({ message: "Lecture not found." });
+      return;
+    }
+
+    const summary = await summarizeContent(lecture.content);
+
+    const updatedLecture = await prisma.lecture.update({
+      where: { id: parseInt(lectureId) },
+      data: { summarizedContent: summary },
+    });
+
+    res.status(200).json({
+      message: "Lecture summarized successfully",
+      updatedLecture,
+    });
+  } catch (error) {
+    console.error("Error summarizing lecture:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const getLectureById = async (req: Request, res: Response) => {
+  try {
+    const { classId, lectureId } = req.params;
+
+    if (!classId || !lectureId) {
+      res.status(400).json({ message: "classId and lectureId are required." });
+      return;
+    }
+
+    const lecture = await prisma.lecture.findUnique({
+      where: {
+        id: parseInt(lectureId),
+        classId: parseInt(classId),
+      },
+    });
+
+    if (!lecture) {
+      res.status(404).json({ message: "Lecture not found." });
+      return;
+    }
+
+    res.status(200).json({ message: "Lecture fetched successfully", lecture });
+  } catch (error) {
+    console.error("Error fetching lecture:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -103,24 +167,31 @@ const setPdfCorsHeader = async (req: Request, res: Response) => {
   const pdfUrl = req.query.url as string;
 
   if (!pdfUrl) {
-    res.status(400).json({message: 'URL paramater is required.'});
+    res.status(400).json({ message: "URL paramater is required." });
     return;
   }
 
   try {
-    const response = await axios.get(pdfUrl, {responseType: 'stream'});
+    const response = await axios.get(pdfUrl, { responseType: "stream" });
 
-    res.set('Access-Control-Allow-Origin', '*');
+    res.set("Access-Control-Allow-Origin", "*");
 
-    if (response.headers['content-type']) {
-      res.set('Content-Type', response.headers['content-type']);
+    if (response.headers["content-type"]) {
+      res.set("Content-Type", response.headers["content-type"]);
     }
 
     response.data.pipe(res);
   } catch (error) {
-    console.error('Error fetching PDF:', error);
+    console.error("Error fetching PDF:", error);
     res.status(500).json({ message: "Internal server error" });
   }
-}
+};
 
-export { createLecture, getLecturesForClass, deleteLecture, setPdfCorsHeader };
+export {
+  createLecture,
+  getLecturesForClass,
+  getLectureById,
+  deleteLecture,
+  setPdfCorsHeader,
+  summarizeLecture,
+};
