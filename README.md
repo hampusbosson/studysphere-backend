@@ -32,10 +32,15 @@ npm install
 
 # 3. Copy & configure environment variables
 cp .env.example .env
-# • Set DATABASE_URL to your Postgres connection string
-# • Set OPENAI_KEY to your OpenAI API key
+# Then edit `.env` and set:
+#   DATABASE_URL=postgresql://user:pass@host:port/dbname
+#   OPENAI_KEY=sk-...
 
-# 4. Run database migrations & start server\ npx prisma migrate dev --name init\ npm run dev
+# 4. Run database migrations
+npx prisma migrate dev --name init
+
+# 5. Start the development server
+npm run dev
 ```
 
 The backend will run on **http://localhost:3000** by default.
