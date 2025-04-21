@@ -97,10 +97,12 @@ The frontend will run on **http://localhost:5173** by default and proxy all API 
 6. **Offline Support**: Cache lectures and summaries for offline viewing.
 7. **Custom Theming**: Allow users to switch between light/dark and personalize colors.
 
-## Original PDF Content:
+
+## App Preview:
+**Original PDF Content:**
 <img width="1421" alt="Skärmavbild 2025-04-21 kl  22 33 39" src="https://github.com/user-attachments/assets/258e852d-6f7f-4d86-9c2b-0842924b7e43" />
 
-## Summary Of PDF In Texteditor Module:
+**Summary Of PDF In Texteditor Module:**
 <img width="1419" alt="Skärmavbild 2025-04-21 kl  22 34 37" src="https://github.com/user-attachments/assets/11d09973-8af2-430c-8027-2fdeca1c9216" />
 
 
