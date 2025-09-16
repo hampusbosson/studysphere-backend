@@ -3,6 +3,8 @@ const LocalStrategy = require('passport-local').Strategy;
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const passportJWT = require('passport-jwt');
+const dotenv = require("dotenv");
+dotenv.config();
 
 const JWTStrategy = passportJWT.Strategy;
 const ExtractJWT = passportJWT.ExtractJwt;

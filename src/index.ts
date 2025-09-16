@@ -4,6 +4,8 @@ import authRoutes from './routes/authRoutes';
 import courseRoutes from './routes/courseRoutes';
 import lectureRoutes from './routes/lectureRoutes'
 import cookieParser from 'cookie-parser';
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
